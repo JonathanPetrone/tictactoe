@@ -1,9 +1,26 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 )
+
+var Tmpl *template.Template
+var DynamicContentTmpl *template.Template
+
+func init() {
+	var err error
+	Tmpl, err = template.ParseFiles("templates/index.html", "templates/dynamic_content.html")
+	if err != nil {
+		log.Fatalf("Failed to load templates: %v", err)
+	}
+
+	DynamicContentTmpl, err = template.ParseFiles("templates/dynamic_content.html")
+	if err != nil {
+		log.Fatalf("Failed to load dynamic content template: %v", err)
+	}
+}
 
 func main() {
 	board := Tictactoe{}

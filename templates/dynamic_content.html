@@ -1,0 +1,30 @@
+<div id="dynamic-content">
+    <div class="grid grid-cols-3 gap-4 p-4 mt-4 w-1/3 mx-auto" id="game-board">
+        {{range $i, $row := .Board}}
+            {{range $j, $cell := $row}}
+                <button
+                    class="w-auto h-32 bg-slate-300 border-2 border-slate-600 text-6xl font-bold text-gray-700 hover:bg-white"
+                    hx-post="/move?x={{$i}}&y={{$j}}"
+                    hx-target="#dynamic-content"
+                    hx-swap="outerHTML"
+                    id="cell-{{$i}}-{{$j}}">
+                    {{$cell}}
+                </button>
+            {{end}}
+        {{end}}
+    </div>
+
+    
+
+    <div class="mt-4 p-4 bg-gray-200 border-t-2 border-gray-300 flex flex-col justify-center items-center w-1/3 mx-auto">
+        <p id="player-turn" class="text-4xl text-stone-700 text-center">{{.GameStatus}}</p>
+        <button
+            class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-700 focus:outline-none"
+            hx-post="/reset"
+            hx-target="#dynamic-content"
+            hx-swap="outerHTML"
+        >
+            Reset
+        </button>
+    </div>
+    

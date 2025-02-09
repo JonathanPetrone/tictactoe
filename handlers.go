@@ -2,27 +2,27 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func (t *Tictactoe) ServeStart(rw http.ResponseWriter, r *http.Request) {
-	// Parse the template file
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		http.Error(rw, "Error loading template", http.StatusInternalServerError)
-		log.Println("Template parsing error:", err)
-		return
+func (t *Tictactoe) renderTemplate(w http.ResponseWriter, dynamicOnly bool) {
+	var err error
+	if dynamicOnly {
+		err = DynamicContentTmpl.Execute(w, t)
+	} else {
+		err = Tmpl.Execute(w, t)
 	}
 
-	// Execute the template with the current game state
-	err = tmpl.Execute(rw, t)
 	if err != nil {
-		http.Error(rw, "Error rendering template", http.StatusInternalServerError)
-		log.Println("Template execution error:", err)
+		log.Printf("Template execution error: %v", err) // Log the error
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
+}
+
+func (t *Tictactoe) ServeStart(w http.ResponseWriter, r *http.Request) {
+	t.renderTemplate(w, false) // false for full page
 }
 
 func (t *Tictactoe) switchTurn() {
@@ -35,23 +35,46 @@ func (t *Tictactoe) switchTurn() {
 
 func (t *Tictactoe) makeMoveHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the coordinates from the request
-	x, _ := strconv.Atoi(r.URL.Query().Get("x"))
-	y, _ := strconv.Atoi(r.URL.Query().Get("y"))
+	x, errX := strconv.Atoi(r.URL.Query().Get("x"))
+	y, errY := strconv.Atoi(r.URL.Query().Get("y"))
 
-	// Make sure the square is empty
-	if t.Board[x][y] == "" {
-		// Set the move on the board
-		t.Board[x][y] = t.PlayerTurn
-		// Switch turns
-		t.switchTurn()
+	if errX != nil || errY != nil {
+		http.Error(w, "Invalid move coordinates", http.StatusBadRequest)
+		return
 	}
 
-	// Respond with the updated move (X or O)
-	fmt.Fprintf(w, "%s", t.Board[x][y])
-	t.ServeStart(w, r)
+	// Ensure the move is valid
+	if x < 0 || x >= 3 || y < 0 || y >= 3 || t.Board[x][y] != "" {
+		http.Error(w, "Invalid move", http.StatusBadRequest)
+		return
+	}
+
+	// Make the move
+	t.Board[x][y] = t.PlayerTurn
+
+	// Check if the player has won
+	if t.checkWin(t.PlayerTurn) {
+		t.GameStatus = fmt.Sprintf("Player %s wins!", t.PlayerTurn)
+	} else {
+		// Switch turns
+		t.switchTurn()
+		t.GameStatus = fmt.Sprintf("It's %s's turn", t.PlayerTurn)
+	}
+
+	if t.TurnNumber == 9 {
+		if t.checkWin(t.PlayerTurn) {
+			t.GameStatus = fmt.Sprintf("Player %s wins!", t.PlayerTurn)
+		} else {
+			t.GameStatus = fmt.Sprintf("It's a draw")
+		}
+	}
+	t.TurnNumber++
+
+	// Render only the dynamic content
+	t.renderTemplate(w, true)
 }
 
 func (t *Tictactoe) resetBoard(w http.ResponseWriter, r *http.Request) {
-	t.Init()
-	t.ServeStart(w, r)
+	t.Init()                  // Reset the board
+	t.renderTemplate(w, true) // Only update dynamic content
 }
