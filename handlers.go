@@ -10,19 +10,21 @@ import (
 func (t *Tictactoe) renderTemplate(w http.ResponseWriter, dynamicOnly bool) {
 	var err error
 	if dynamicOnly {
+		// only updates dynamic_content
 		err = DynamicContentTmpl.Execute(w, t)
 	} else {
+		// updates all
 		err = Tmpl.Execute(w, t)
 	}
 
 	if err != nil {
-		log.Printf("Template execution error: %v", err) // Log the error
+		log.Printf("Template execution error: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
 func (t *Tictactoe) ServeStart(w http.ResponseWriter, r *http.Request) {
-	t.renderTemplate(w, false) // false for full page
+	t.renderTemplate(w, false)
 }
 
 func (t *Tictactoe) switchTurn() {
@@ -70,11 +72,10 @@ func (t *Tictactoe) makeMoveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	t.TurnNumber++
 
-	// Render only the dynamic content
 	t.renderTemplate(w, true)
 }
 
 func (t *Tictactoe) resetBoard(w http.ResponseWriter, r *http.Request) {
-	t.Init()                  // Reset the board
-	t.renderTemplate(w, true) // Only update dynamic content
+	t.Init() // Reset the board to initial state
+	t.renderTemplate(w, true)
 }
