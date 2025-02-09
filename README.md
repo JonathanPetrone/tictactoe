@@ -1,6 +1,8 @@
 # Tic Tac Toe
 This is a game of Tic Tac Toe that you can play in your browser
 
+![My Image](screenshot_GH.png)
+
 ## Requirements
 - Go version 1.23
 
